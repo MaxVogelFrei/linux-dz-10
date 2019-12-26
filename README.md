@@ -1,13 +1,11 @@
 # Домашнее задание 10
 
-[playbook](playbooks/nginx.yml)  
-[inventory](inventories/hosts.yml)  
-[vars](roles/nginx/defaults/main.yml)  
-[handlers](roles/nginx/handlers/main.yml)  
-[tasks](roles/nginx/tasks/main.yml)  
-[Vagrantfile](Vagrantfile)  
-
-## Ansible
+[playbook](playbooks/nginx.yml)
+[inventory](inventories/hosts.yml)
+[vars](roles/nginx/defaults/main.yml)
+[handlers](roles/nginx/handlers/main.yml)
+[tasks](roles/nginx/tasks/main.yml)
+[Vagrantfile](Vagrantfile)
 
 ## Ansible
 
@@ -50,7 +48,42 @@ roles_path=./roles
 
 Создаю директории defaults  handlers  tasks  templates в roles/nginx/
 
+#### defaults - создаю переменные для имени репозитория epel, порта nginx, прав на конфиг nginx и index.html, пути к index.html
+```bash
+[root@centos7 defaults]# cat main.yml
+```
+```yaml
+nginx_listen_port: 8080
+epel: epel-release
+html: /usr/share/nginx/html/index.html
+nginx_conf_mode: '0750'
+```
 
+#### handlers
+* рестарт nginx + состояние enabled
+* перечитывание конфига 
+```bash
+[root@centos7 handlers]# cat main.yml
+```
+```yaml
+---
+- name: restart_nginx
+  systemd:
+    name: nginx
+    state: restarted
+    enabled: yes
+
+- name: reload_nginx
+  systemd:
+    name: nginx
+    state: reloaded
+```
+
+#### tasks
+* установка репозитория
+* nginx с notify для его рестарта
+* замена конфига из templates с notify для его перечитывания
+* замена дефолтной страницы index.html
 ```bash
 [root@centos7 tasks]# cat main.yml
 ```
@@ -93,4 +126,30 @@ roles_path=./roles
     owner: nginx
     group: nginx
     mode: "{{ nginx_conf_mode }}"
+```
+
+
+#### templates
+* index.html используя переменную ansible_hostname для подстановки имени машины
+* nginx.conf с другим портом из переменной nginx_listen_port
+
+```bash
+[root@centos7 templates]# cat index.html.j2
+# {{ ansible_managed }}
+<p>Hello from {{ ansible_hostname }}</p>
+```
+```bash
+[root@centos7 templates]# cat nginx.conf.j2
+events {
+ worker_connections 1024;
+}
+http {
+ server {
+  listen {{ nginx_listen_port }} default_server;
+  server_name default_server;
+  root /usr/share/nginx/html;
+  location / {
+  }
+ }
+}
 ```
