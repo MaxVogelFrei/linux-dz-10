@@ -1,0 +1,62 @@
+---
+- name: Nginx
+  hosts: nginx
+  become: yes
+  vars:
+    nginx_listen_port: 8080
+    epel: epel-release
+    html: /usr/share/nginx/html/index.html
+    nginx_conf_mode: '0750'
+  tasks:
+
+    - name: Install EPEL Repo package from standard repo
+      yum:
+        name: "{{ epel }}"
+        state: present
+      tags:
+        - epel-package
+        - packages
+
+    - name: Install nginx package from epel repo
+      yum:
+        name: nginx
+        state: latest
+      notify:
+        - restart_nginx
+      tags:
+        - nginx-package
+        - packages
+
+    - name: NGINX | Create NGINX config file from template
+      template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        owner: root
+        group: root
+        mode: "{{ nginx_conf_mode }}"
+      notify:
+        - reload_nginx
+      tags:
+        - nginx-configuration
+
+
+    - name: NGINX | Create NGINX html file from template
+      template:
+        src: templates/index.html.j2
+        dest: "{{ html }}"
+        owner: www-data
+        group: www-data
+        mode: "{{ nginx_conf_mode }}"
+
+  handlers:
+    - name: restart_nginx
+      systemd:
+        name: nginx
+        state: restarted
+        enabled: yes
+
+    - name: reload_nginx
+      systemd:
+        name: nginx
+        state: reloaded
+

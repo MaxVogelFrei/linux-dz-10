@@ -1,0 +1,5 @@
+nginx_listen_port: 8080
+epel: epel-release
+html: /usr/share/nginx/html/index.html
+nginx_conf_mode: '0750'
+
