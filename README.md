@@ -1,27 +1,26 @@
 # Домашнее задание 10
 
-[playbook](playbooks/nginx.yml)
-[inventory](inventories/hosts.yml)
-[vars](roles/nginx/defaults/main.yml)
-[handlers](roles/nginx/handlers/main.yml)
-[tasks](roles/nginx/tasks/main.yml)
+Для проверки в корне проекта выполнить:
+```bash
+# vagrant up
+# ansible-playbook playbooks/nginx.yml
+```
+[playbook](playbooks/nginx.yml)  
+[inventory](inventories/hosts.yml)  
+[vars](roles/nginx/defaults/main.yml)  
+[handlers](roles/nginx/handlers/main.yml)  
+[tasks](roles/nginx/tasks/main.yml)  
 [Vagrantfile](Vagrantfile)
-
 ## Ansible
-
 Подготовить стенд на Vagrant как минимум с одним сервером. На этом сервере используя Ansible необходимо развернуть nginx со следующими условиями:
-
 * необходимо использовать модуль yum/apt
 * конфигурационные файлы должны быть взяты из шаблона jinja2 с перемененными
 * после установки nginx должен быть в режиме enabled в systemd
 * должен быть использован notify для старта nginx после установки
 * сайт должен слушать на нестандартном порту - 8080, для этого использовать переменные в Ansible
 * Сделать все это с использованием Ansible роли
-
 ## Процесс решения
-
 ### начинаю с описания хоста в yaml формате в inventories/hosts.yml  
-
 ```bash
 [root@centos7 inventories]# cat hosts.yml
 ```
@@ -33,7 +32,6 @@ all:
       ansible_port: 2200
       ansible_private_key_file: .vagrant/machines/nginx/virtualbox/private_key
 ```
-
 ### в ansible.cfg указываю inventory, и путь к роли  
 ```bash
 [root@centos7 linux-dz-10]# cat ansible.cfg
@@ -45,9 +43,7 @@ retry_files_enabled = False
 roles_path=./roles
 ```
 ### Создание роли nginx
-
 Создаю директории defaults  handlers  tasks  templates в roles/nginx/
-
 #### defaults - создаю переменные для имени репозитория epel, порта nginx, прав на конфиг nginx и index.html, пути к index.html
 ```bash
 [root@centos7 defaults]# cat main.yml
@@ -58,7 +54,6 @@ epel: epel-release
 html: /usr/share/nginx/html/index.html
 nginx_conf_mode: '0750'
 ```
-
 #### handlers
 * рестарт nginx + состояние enabled
 * перечитывание конфига 
@@ -78,7 +73,6 @@ nginx_conf_mode: '0750'
     name: nginx
     state: reloaded
 ```
-
 #### tasks
 * установка репозитория
 * nginx с notify для его рестарта
@@ -127,12 +121,9 @@ nginx_conf_mode: '0750'
     group: nginx
     mode: "{{ nginx_conf_mode }}"
 ```
-
-
 #### templates
 * index.html используя переменную ansible_hostname для подстановки имени машины
 * nginx.conf с другим портом из переменной nginx_listen_port
-
 ```bash
 [root@centos7 templates]# cat index.html.j2
 # {{ ansible_managed }}
